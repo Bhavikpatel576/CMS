@@ -1,0 +1,13 @@
+<form action ="/<%=@file_name%>" method="post">
+	<dl>
+		<dt>
+			<label for="list_name">Enter content of changes.txt</label>
+		</dt>
+
+		<textarea name="content" id="content" rows="20" cols="50">
+			<%=@file_data%>
+		</textarea>
+	</dl>
+		<button class="save" type="submit">Save Changes</button>
+		<a href= "/<%=params[:id]%>">Cancel</a>
+</form>
