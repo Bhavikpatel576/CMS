@@ -51,8 +51,6 @@ get "/:file" do
 	file_path = File.join(data_path, file_name)
 	if File.exist?(file_path)
 		@file_data = load_file_content(file_path)
-		erb :index, layout: :layout
-		# erb :index
 	else
 		session[:error] = "An incorrect page was loaded"
 		redirect "/"
