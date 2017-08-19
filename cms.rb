@@ -3,21 +3,13 @@ require "sinatra/reloader" if development?
 require "tilt/erubis"
 require "sinatra/content_for"
 require "redcarpet"
-# require "pry"
+require "pry"
 
 configure do 
     enable :sessions
-    set :session_secret, 'secret'
-    set :erb, :escape_html => true
+    # set :session_secret, 'secret'
+    # set :erb, :escape_html => true
 end
-
-#this code no longer works or can be preprocessed because of the isolated testing environment
-#and the way the directory structure is set up.
-# before do
-	# pattern = File.join(data_path, "*")
-	# @data_files = Dir.glob(pattern).map {|file| File.basename(file)}
-	# @data_files.each {|file| session[:indices] << file}
-# end
 
 def error_for_index(name)
 	#iterate through the file to see if value persists
@@ -44,15 +36,14 @@ def load_file_content(path)
 		headers["Content-Type"] = "text/plain"
 		content
 	when ".md"
-		render_markdown(content)
+		erb render_markdown(content)
 	end
 end
 
 get "/" do
 	pattern = File.join(data_path, "*")
 	@data_files = Dir.glob(pattern).map {|file| File.basename(file)}
-  # erb :home, layout: :layout
-  erb :home
+  erb :home, layout: :layout
 end
 
 get "/:file" do
@@ -74,7 +65,7 @@ get "/:file/edit" do
 
 	if File.exist?(file_path)
 		@file_data = File.read(file_path)
-		erb :edit
+		erb :edit, layout: :layout
 	else
 		session[:error] = "An incorrect page was loaded"
 		redirect "/"
@@ -86,7 +77,6 @@ post "/:file" do
 		file_path = File.join(data_path, @file_name)
 		File.write(file_path, params[:content])
 		session[:message] = "#{@file_name} has been updated"
+		# binding.pry
 		redirect "/"
 end
-
-

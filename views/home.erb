@@ -2,10 +2,10 @@
 	<% @data_files.each do |files| %>
 		<li>
 		<a href="<%=files %>"><%=files%></a>
-			<form action="/<%=files %>/edit" method="get">
+		<a href="/<%=files %>/edit">edit</a>
+			<!-- <form action="/<%=files %>/edit" method="get">
 				<button type="edit">Edit</button>
-			</form>
+			</form> -->
 		</li>
 	<%end%>
-	<li> test list </li>
 </ul>
