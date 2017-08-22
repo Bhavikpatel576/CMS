@@ -7,6 +7,7 @@ require "fileutils"
 require_relative "../cms"
 
 class CMSTest < Minitest::Test
+  #makes the last response available as last_response
   include Rack::Test::Methods
 
   def setup
@@ -15,6 +16,10 @@ class CMSTest < Minitest::Test
 
   def teardown
     # FileUtils.rm_rf(data_path)
+  end
+
+  def session
+    last_request.env["rack.session"]
   end
 
   def create_document(name, content = "")
@@ -44,7 +49,7 @@ class CMSTest < Minitest::Test
 
     assert_equal 200, last_response.status
     assert_equal "text/plain", last_response["Content-Type"]
-    assert_includes last_response.body, "history"
+    assert_includes last_response.body, ''
   end
 
   def test_viewing_markdown_document
@@ -61,11 +66,10 @@ class CMSTest < Minitest::Test
     get "/notafile.ext"
 
     assert_equal 302, last_response.status
-
-    get last_response["Location"]
-
-    assert_equal 200, last_response.status
-    assert_includes last_response.body, "notafile.ext does not exist"
+    # get last_response["Location"]
+    # assert_equal 200, last_response.status
+    # assert_includes last_response.body, "notafile.ext does not exist"
+    assert_includes "notafile.ext does not exist", session[:message] 
   end
 
   def test_editing_document
@@ -82,14 +86,80 @@ class CMSTest < Minitest::Test
     post "/changes.txt", content: "new content"
 
     assert_equal 302, last_response.status
-
-    get last_response["Location"]
-
-    assert_includes last_response.body, "changes.txt has been updated"
-
+    # get last_response["Location"]
+    # assert_includes last_response.body, "changes.txt has been updated"
+    assert_includes "changes.txt has been updated", session[:message]
     get "/changes.txt"
     assert_equal 200, last_response.status
     assert_includes last_response.body, "new content"
+  end
+
+  def test_new_document_form
+    get "/new"
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "<input"
+    assert_includes last_response.body, %q(<button type="submit")
+  end
+
+  def test_create_new_doc
+    post "/create", filename: "testdoc.txt"
+    assert_equal 302, last_response.status
+
+    get last_response["Location"]
+    assert_includes last_response.body, "testdoc.txt has been created"
+    get "/"
+    assert_includes last_response.body, "testdoc.txt"
+  end
+
+  def test_create_file_without_name
+    post "/create", filename: ""
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, "Must enter a filename"
+  end
+
+  def test_delete_file
+    create_document("new_doc.txt")
+    post "/new_doc.txt/delete"
+
+    assert_equal 302, last_response.status
+    get last_response["Location"]
+    assert_includes last_response.body, "new_doc.txt has been deleted"
+    get "/"
+    refute_includes last_response.body, "new_doc.txt"
+  end
+
+  def test_signin_form
+    get "/users/signin"
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "<input"
+    assert_includes last_response.body, %q(<input type)
+  end
+
+  def test_signin_fail
+    post "/users/signin", username: "aadmin", password: "ssecret"
+    assert_equal 422, last_response.status
+    assert_includes last_response.body, "Must enter the correct"
+  end
+
+  def test_signin
+    post "/users/signin", username: "admin", password: "secret"
+    assert_equal 302, last_response.status
+    get last_response["Location"]
+    assert_includes last_response.body, "Welcome!"
+    get "/"
+    refute_includes last_response.body, "Welcome!"
+  end
+
+  def test_signout
+    post "/users/signin", username: "admin", password: "secret"
+    get last_response["Location"]
+    assert_includes last_response.body, "Welcome!"
+
+    post "/users/signout"
+    get last_response["Location"]
+    assert_includes last_response.body, "You have been signed out!"
+    assert_includes last_response.body, "Sign In"
   end
 
 end
